@@ -1,0 +1,23 @@
+FalconMods - unofficial community mod for Falcon Design Space
+
+What it does
+  * Adds "Quick Calibration" to the camera calibration page: calibrates the Falcon A1
+    camera (lens distortion + alignment) from one photo of the grid printed on the bed.
+  * Shows the extra fill patterns the software already contains but hides on gantry
+    lasers: Offset (concentric), Cross and Zigzag fill, plus the fill angle.
+
+How it works
+  FalconMods is installed into your Falcon Design Space folder. It edits the program's
+  user-interface resource files (mui\*.rcc) in place and keeps the original files in
+  falconmods\backup. Uninstalling FalconMods restores them.
+
+Please note
+  * This is NOT made, endorsed or supported by Creality. Use at your own risk.
+  * Modifying the software may be against Creality's software license terms.
+  * Falcon Design Space updates replace the patched files: run this installer again
+    after updating. If the new version is not compatible, the installer will tell you
+    and leave the program unchanged.
+  * Camera calibrations are written to %LOCALAPPDATA%\Falcon Design Space\conf\camera\
+    cameraConfig.txt; every change makes a backup in the falconmods_backups folder next to it.
+
+Falcon Design Space must be closed while installing or uninstalling.

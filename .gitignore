@@ -1,0 +1,9 @@
+# local working data (extracted vendor resources, captures, experiments)
+work/
+.venv/
+build/
+dist/
+__pycache__/
+*.pyc
+*.spec.bak
+installer/Output/

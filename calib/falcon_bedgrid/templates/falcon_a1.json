@@ -1,0 +1,25 @@
+{
+  "name": "Creality Falcon A1 - printed bed plate grid",
+  "notes": [
+    "Coordinates are laser/canvas millimetres: x to the right, y downwards from the back of the machine.",
+    "Inner line positions were measured against an engraving-based calibration (laser ground truth).",
+    "Outer border positions are only starting values; the fit estimates them from the image ('free').",
+    "Remove the honeycomb panel and any material; close the lid before capturing."
+  ],
+  "work_area_mm": [381, 305],
+  "px_per_mm": 6,
+  "vertical": [
+    {"x": 19.4, "free": true},
+    {"x": 145.45},
+    {"x": 271.48},
+    {"x": 397.5, "free": true}
+  ],
+  "horizontal": [
+    {"y": -1.6, "free": true},
+    {"y": 98.8},
+    {"y": 199.2},
+    {"y": 299.6, "free": true}
+  ],
+  "crossing_clearance_mm": 8.0,
+  "sample_step_mm": 2.5
+}
