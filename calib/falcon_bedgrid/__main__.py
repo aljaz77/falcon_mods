@@ -110,14 +110,31 @@ def headless_calibrate(token, image, device, log):
     log(f"job {token}: calibration {result['status']}")
 
 
-def headless_apply(token, log):
+def _valid_pending(pend):
+    """Sanity-check a pending calibration before it is written into the app's config."""
     import numpy as np
+    try:
+        K, D, NK, W = (np.array(pend[k], float) for k in ("K", "D", "NK", "W"))
+    except (KeyError, TypeError, ValueError):
+        return None
+    if K.shape != (3, 3) or NK.shape != (3, 3) or W.shape != (3, 3) or D.ndim != 1 or len(D) not in (5, 8, 12, 14):
+        return None
+    if not all(np.all(np.isfinite(m)) for m in (K, D, NK, W)) or K[0, 0] <= 0 or NK[0, 0] <= 0:
+        return None
+    dev = pend.get("device")
+    if dev is not None and not re.fullmatch(r"[A-Za-z0-9 _.\-]{1,64}", str(dev)):
+        return None
+    return K, D, NK, W
+
+
+def headless_apply(token, log):
     pend = jobs.load_pending(token)
-    if not pend:
-        log(f"job {token}: nothing to apply (unknown or expired job)")
+    mats = _valid_pending(pend) if pend else None
+    if not mats:
+        log(f"job {token}: nothing to apply (unknown, expired or invalid job)")
         return
-    rep = {"_matrices": tuple(np.array(pend[k], float) for k in ("K", "D", "NK", "W")),
-           "config_path": pend["config_path"], "device": pend["device"]}
+    # Always the app's own calibration file - never a path taken from the job folder.
+    rep = {"_matrices": mats, "config_path": config_io.default_config_path(), "device": pend.get("device")}
     try:
         apply_report(rep, pend["device"], log)
     except Exception:  # noqa: BLE001

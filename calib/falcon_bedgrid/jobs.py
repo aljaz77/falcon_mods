@@ -43,9 +43,14 @@ def input_image(token):
 
 
 def cleanup():
+    """Remove job folders and saved alignment photos older than a day."""
     now = time.time()
-    for name in os.listdir(jobs_dir()):
-        p = os.path.join(jobs_dir(), name)
+    image_dir = os.path.join(config_io.app_data_dir(), "image")
+    old = [os.path.join(jobs_dir(), n) for n in os.listdir(jobs_dir())]
+    if os.path.isdir(image_dir):
+        old += [os.path.join(image_dir, n) for n in os.listdir(image_dir)
+                if n.startswith("falconmods_align_") and n.endswith(".jpg")]
+    for p in old:
         try:
             if now - os.path.getmtime(p) > 24 * 3600:
                 shutil.rmtree(p) if os.path.isdir(p) else os.remove(p)

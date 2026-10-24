@@ -9,6 +9,7 @@ import numpy as np
 
 CAMERA_NAME = "Creality Falcon Camera"
 CALIBRATION_THICKNESS_MM = 0.001
+MAX_BACKUPS = 30
 
 
 def app_data_dir():
@@ -108,6 +109,13 @@ def save(cfg, path, backup=True):
         bdir = os.path.join(os.path.dirname(path), "falconmods_backups")
         os.makedirs(bdir, exist_ok=True)
         shutil.copy2(path, os.path.join(bdir, f"cameraConfig-{stamp}.txt"))
+        # keep the 30 most recent backups (names sort by date)
+        olds = sorted(n for n in os.listdir(bdir) if n.startswith("cameraConfig-") and n.endswith(".txt"))
+        for n in olds[:-MAX_BACKUPS]:
+            try:
+                os.remove(os.path.join(bdir, n))
+            except OSError:
+                pass
     tmp = path + ".tmp"
     with open(tmp, "w", encoding="utf-8", newline="\n") as f:
         json.dump(cfg, f, indent=4, ensure_ascii=False)

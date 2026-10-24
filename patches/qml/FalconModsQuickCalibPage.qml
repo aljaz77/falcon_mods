@@ -26,6 +26,7 @@ Rectangle {
         step = 0
         result = null
         applying = false
+        applyWatch.stop()
         capturing = false
         job.cancel()
     }
@@ -69,7 +70,19 @@ Rectangle {
             return
         }
         applying = true
+        applyWatch.restart()
         clToast.show(qsTr("Falcon Design Space restarts to load the new calibration..."), 8000)
+    }
+
+    // If we are still alive long after Apply, the restart didn't happen (e.g. the save prompt was
+    // cancelled): unlock the page so the user can try again or leave.
+    Timer {
+        id: applyWatch
+        interval: 45000
+        onTriggered: {
+            page.applying = false
+            clToast.show(qsTr("Falcon Design Space was not restarted, so the calibration was not applied. Click Apply to try again."), 8000)
+        }
     }
 
     Timer {
@@ -114,7 +127,6 @@ Rectangle {
         anchors.margins: 16
         state: "icon"
         iconSource: "qrc:/qml/res/control/close.svg"
-        enabled: !page.applying
         onClicked: {
             page.reset()
             workbenchStack.workbenchViewIndex = 0

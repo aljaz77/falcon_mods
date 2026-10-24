@@ -8,7 +8,8 @@ Unofficial improvements for **Creality Falcon Design Space** and the **Creality 
   itself to load the result.
 * **Automatic laser alignment:** the stock *Camera Alignment* step gets a **Detect markers** button
   that finds the four engraved crosshairs (≈0.1 mm), so there's no double-clicking. It applies live, without a
-  restart, and later Quick Calibrations keep that laser registration.
+  restart, and later Quick Calibrations keep that laser registration. Measured on a real A1: the
+  camera view matches the burned markers within about 0.1–0.2 mm.
 * **Concentric (Offset) fill and friends:** unlocks *Offset Fill* (concentric), *Cross Fill*,
   *Zigzag Fill* and the *Fill angle* for gantry lasers. The engine already implements them, but the UI
   only showed them for galvo machines.
@@ -131,7 +132,7 @@ calib/falcon_bedgrid/   calibration helper: engine, marker detection, job protoc
 patches/                QML patch definitions (+ new QML/JS files in patches/qml)
 tools/                  rcc.py, patcher.py, build/publish scripts, gcode_preview.py, straightness.py, devrun.sh
 installer/              Inno Setup script, icon
-tests/                  pytest suite (synthetic, no vendor files needed; spiral tests need Node.js)
+tests/                  pytest suite (synthetic data + one real alignment photo, no vendor files; spiral tests need Node.js)
 docs/                   ARCHITECTURE, RESEARCH, USER_GUIDE, PLAN, PROGRESS
 CLAUDE.md               start here if you want to modify FalconMods (for humans and AI agents)
 ```
@@ -159,6 +160,16 @@ cd calib && ../.venv/Scripts/python -m falcon_bedgrid --cli --image photo.jpg --
 
 Want to change or extend something? Read [CLAUDE.md](CLAUDE.md) (workflow, safety rules for the
 user's calibration file, dev hook) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## Security and privacy
+
+- Everything runs locally. FalconMods never connects to the internet and collects nothing.
+- The installer needs admin rights once, to patch the app in `Program Files`. It keeps the
+  original files and restores them on uninstall.
+- The helper is started through a `falconbedgrid://` link. Its parameters are strictly
+  validated. Apart from its own folder (`%LOCALAPPDATA%\Falcon Design Space\falconmods`), the only
+  file it changes is the app's camera calibration (with a backup first), so a forged link can at
+  worst restart Falcon Design Space. Details: *Security* in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Adding another machine
 

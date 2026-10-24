@@ -115,3 +115,17 @@
   but 0.17 mm of that was my own pixel-convention error (the bed view is drawn flipped, which shifts
   the row maths by one pixel) → about 0.1–0.2 mm true error, around one camera pixel. Camera
   Fine-Tuning was already 0/0 after the alignment.
+- 1.2.1 installed on the user's PC and checked: the installed helper finds all four markers in the
+  real photo; the stored calibration has 12 distortion terms.
+
+### 1.2.2: bug, security and privacy review
+- GitHub audit: the public repo (2 commits, releases v1.2.0/v1.2.1) contains no machine IDs, user
+  names, local paths, credentials or Creality files. Images carry no EXIF/GPS metadata. The
+  installers and PyInstaller bundles contain no local paths (only NumPy's CI build path). The
+  development history with machine-specific data stays on a local branch that is never pushed.
+  One finding: the commit/tag author e-mail is the user's personal address (git metadata).
+- Hardening: `apply` writes only the default config path and validates the pending matrices;
+  page unlocks after 45 s if the app wasn't restarted, close button always enabled; alignment
+  photos and job folders cleaned after a day; backups capped at 30; marker fallback time budget
+  25 s; kernel32 calls with argtypes. Unused imports removed (pyflakes clean).
+- 43 tests pass (14 new security tests); all patches still apply to FDS 1.10.7.

@@ -11,6 +11,7 @@ Returns crosshair centres in the pixel coordinates of the given image (raw or un
 so the result can be handed straight to clCamera.setPielPos().
 """
 import itertools
+import time
 
 import cv2
 import numpy as np
@@ -18,6 +19,7 @@ import numpy as np
 STOCK_MARKERS_MM = [(100.5, 242.5), (280.5, 242.5), (280.5, 62.5), (100.5, 62.5)]
 STOCK_CENTRE_MM = (190.5, 152.5)
 MARKER_RADIUS_MM = 10.0
+FALLBACK_BUDGET_S = 25.0
 
 
 class MarkerError(Exception):
@@ -221,7 +223,11 @@ def detect(image, expected_radius_px=None):
 
     # 2) three markers + the fourth predicted from the square (e.g. half off the material edge)
     tries = []
-    for tri in itertools.combinations(uniq, 3):
+    # bounded: strongest candidates only, and a time budget (the UI waits at most 60 s)
+    deadline = time.time() + FALLBACK_BUDGET_S
+    for tri in itertools.combinations(uniq[:8], 3):
+        if time.time() > deadline:
+            break
         P = [np.array([q[1], q[2]]) for q in tri]
         for k in range(3):
             A, B, C = P[k], P[(k + 1) % 3], P[(k + 2) % 3]

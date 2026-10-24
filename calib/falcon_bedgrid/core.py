@@ -17,7 +17,6 @@ Pipeline
 5. Repeat 3-4 with a shrinking search radius, rejecting outliers.
 6. Export K, D, NewK, WorldMatrix in Falcon Design Space's convention.
 """
-import math
 
 import cv2
 import numpy as np

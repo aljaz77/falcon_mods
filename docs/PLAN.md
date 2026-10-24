@@ -1,6 +1,8 @@
 # Falcon Design Space mods – Plan
 
-**Status (2026-10-23): implemented and tested. See [PROGRESS.md](PROGRESS.md).**
+**Status (2026-10-24): implemented, tested on a real A1 and released (1.2.2). Beyond this plan:
+spiral fill, in-app Quick Calibration page, automatic marker detection for the stock laser
+alignment. See [PROGRESS.md](PROGRESS.md) and [CHANGELOG.md](../CHANGELOG.md).**
 
 Target: **Creality Falcon A1** with **Falcon Design Space 1.10.7** (Windows).
 

@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.2.2 (2026-10-24)
+Bug and security review:
+- *Apply* always writes the app's own `cameraConfig.txt`. It never uses a path stored in the job
+  folder, and the pending matrices are validated (3×3, finite, positive focal length, 5/8/12/14
+  distortion terms, sane device ID) before anything is written.
+- The Quick Calibration page unlocks again if the app wasn't restarted after *Apply* (for
+  example, you cancelled the "save project?" prompt). The page can always be closed.
+- Housekeeping: saved alignment photos older than a day are deleted together with old job
+  folders, and only the 30 newest calibration backups are kept.
+- *Detect markers* stops its fallback search after 25 s instead of possibly running for minutes.
+- Windows API calls declare their argument types (correct on 64-bit handles).
+- New tests for URL parsing and job validation (43 tests).
+
 ## 1.2.1 (2026-10-24)
 - Detect markers works on real engravings. Tested on a Falcon A1 with 4 mm basswood: the camera
   view then matches the laser within ~0.2 mm at all four markers. Fixes:

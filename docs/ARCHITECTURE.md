@@ -50,9 +50,19 @@ QML can launch URLs and load QML/images, but cannot read or write arbitrary file
 
 Actions: `calibrate` (bed-grid calibration → result + `pending.json`), `apply` (close the app,
 write `pending.json` of that job into `cameraConfig.txt`, relaunch, no answer),
-`markers` (find the 4 stock alignment markers). URL parameters are validated (token
-`[A-Za-z0-9]{6,40}`, image number, device id); `apply` only works for a job created by the
-helper less than 2 h ago.
+`markers` (find the 4 stock alignment markers).
+
+**Security.** Any program or web page can open a `falconbedgrid://` link (browsers ask first), so
+the helper trusts nothing in it:
+- URL parameters are validated (token `[A-Za-z0-9]{6,40}`, image number `\d{1,3}`, device id);
+  anything else is dropped, so a token can never become a path.
+- `apply` only works for a job the helper created less than 2 h ago. Its matrices are checked
+  (`__main__._valid_pending`), and it writes only `config_io.default_config_path()`, never a path
+  from the job folder. Worst case for a forged link: the app restarts.
+- Old job folders and `image/falconmods_align_*.jpg` are deleted after a day. Calibration backups
+  are capped at 30.
+- The page's `applyWatch` timer unlocks the page if the app wasn't closed within 45 s.
+- `tests/test_helper_security.py` covers all of this.
 
 ## Camera calibration data flow
 

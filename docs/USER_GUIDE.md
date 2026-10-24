@@ -53,10 +53,11 @@ remembers it from then on.
    * the fit error (good: under 1 px), how much of the grid was found, how much the result differs
      from your current calibration, and which laser reference was used.
 5. Click **Apply**. Falcon Design Space closes (save your project if it asks), the calibration is
-   written, and the app **starts again by itself** with it.
+   written, and the app **starts again by itself** with it. If you cancel the save prompt, nothing
+   is written; after about 45 s the page says so and you can click **Apply** again.
 
 The old calibration file is always backed up to
-`%LOCALAPPDATA%\Falcon Design Space\conf\camera\falconmods_backups\`.
+`%LOCALAPPDATA%\Falcon Design Space\conf\camera\falconmods_backups\` (the 30 newest are kept).
 To go back, copy a backup over `cameraConfig.txt` while Falcon Design Space is closed.
 
 ### Laser check: Camera Alignment with automatic markers
@@ -84,9 +85,10 @@ the lines are burned dark (or light) enough. You can always double-click the fou
 * **Processing height still matters.** The calibration is made on the bed plate (height 0).
   For material, enter its thickness as usual. With the honeycomb panel in, enter
   *honeycomb height + material thickness* as the processing height.
-* **Accuracy.** In the middle of the bed the camera view matches the laser within about 0.3 mm. Toward
-  the extreme corners expect up to about ±0.5 mm. That's roughly one camera pixel there, plus the
-  lens's colour fringing.
+* **Accuracy.** After a Camera Alignment with *Detect markers*, the camera view matches the laser
+  within about 0.1–0.2 mm at the markers (measured on a real A1). With Quick Calibration alone,
+  expect about 0.3 mm in the middle of the bed. Toward the extreme corners expect up to about
+  ±0.5 mm. That's roughly one camera pixel there, plus the lens's colour fringing.
 * **Fine-tuning.** Your existing *Camera Offset X/Y* settings are kept.
 * The calibration tool also runs on its own from the Start menu (*FalconMods → Falcon Bed-Grid
   Calibration*). It uses the most recent camera photo, or open any photo with **Open image…**.
@@ -151,6 +153,8 @@ calibration stays as it is; use a backup from `falconmods_backups` if you want a
 | No "Quick Calibrate" card | The card only shows for the *Creality Falcon A1*. Re-run the installer after app updates. |
 | "The FalconMods helper could not be started" | Re-run the installer (it registers the `falconbedgrid://` link). |
 | "Markers not found" | The whole pattern must be in view and clearly burned. Recapture, or double-click the centres by hand. |
+| *Apply* keeps spinning | The app wasn't closed (save prompt cancelled?). Wait for the message, then click Apply again. |
+| A browser asks to open "FalconBedGridCalib" | Only allow it if you clicked something in Falcon Design Space. The links can only recalibrate or restart the app, never touch other files. |
 | "only N grid points found" | Lid not fully closed, honeycomb still in, or the bed is covered. |
 | Camera image looks shifted after calibration | Check the processing height, then adjust Camera Offset X/Y. |
 | No *Spiral* button | Re-run the installer and make sure *Spiral fill tool* is ticked. |

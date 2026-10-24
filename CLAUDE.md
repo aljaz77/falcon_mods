@@ -15,7 +15,13 @@ tested with 1.10.7 and a **Creality Falcon A1**. Read this first, then `docs/ARC
 - **Protect `%LOCALAPPDATA%\Falcon Design Space\conf\camera\cameraConfig.txt`** (the user's camera
   calibration). Any test run of the app rewrites it on exit. Snapshot it before, restore after,
   or force-stop the test copy (`taskkill /F`). The app may re-order entries on save; compare by `ID`.
-- Don't write machine IDs, user names or local paths into tracked files.
+- Don't write machine IDs, user names or local paths into tracked files. Grep the diff before
+  pushing.
+- The `falconbedgrid://` link can be opened by anything (web pages too). Validate every URL
+  parameter, never take file paths from the URL or a job folder, and keep
+  `tests/test_helper_security.py` passing.
+- Edit docs with an editor (or the Write/Edit tools), not shell heredocs: Windows paths like
+  `\falconmods` turn into `\f` escapes. Write files with `encoding="utf-8"`.
 - QML/JS patches must fail loudly: every `find` anchor must match exactly `count` times
   (default 1), or the patcher aborts without touching the app.
 

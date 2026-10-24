@@ -232,7 +232,7 @@ def app_running():
     return "falcondesignspace.exe" in out.lower()
 
 
-VERSION = "1.2.1"
+VERSION = "1.2.2"
 
 def main(argv=None):
     ap = argparse.ArgumentParser(prog="FalconModsPatcher")

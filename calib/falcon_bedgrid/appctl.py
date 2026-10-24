@@ -31,14 +31,28 @@ def running_pids():
     return pids
 
 
+def _kernel32():
+    from ctypes import wintypes
+    k32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    k32.OpenProcess.argtypes = (wintypes.DWORD, wintypes.BOOL, wintypes.DWORD)
+    k32.OpenProcess.restype = wintypes.HANDLE
+    k32.QueryFullProcessImageNameW.argtypes = (wintypes.HANDLE, wintypes.DWORD, wintypes.LPWSTR,
+                                               ctypes.POINTER(wintypes.DWORD))
+    k32.QueryFullProcessImageNameW.restype = wintypes.BOOL
+    k32.CloseHandle.argtypes = (wintypes.HANDLE,)
+    k32.CloseHandle.restype = wintypes.BOOL
+    return k32
+
+
 def exe_path(pid):
-    k32 = ctypes.windll.kernel32
+    from ctypes import wintypes
+    k32 = _kernel32()
     h = k32.OpenProcess(0x1000, False, pid)  # PROCESS_QUERY_LIMITED_INFORMATION
     if not h:
         return None
     try:
         buf = ctypes.create_unicode_buffer(32768)
-        n = ctypes.c_ulong(len(buf))
+        n = wintypes.DWORD(len(buf))
         if k32.QueryFullProcessImageNameW(h, 0, buf, ctypes.byref(n)):
             return buf.value
     finally:
