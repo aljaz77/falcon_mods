@@ -147,9 +147,9 @@ def job_images(img, p, tmpl, res, K, D, NK, W):
     ov = core.draw_overlay(img, p, tmpl, res, res["positions"])
     bv = core.bed_view(img, K, D, NK, W, tmpl)
     for x in range(0, int(tmpl.W) + 1, 50):
-        cv2.line(bv, (int(x * tmpl.ppm), 0), (int(x * tmpl.ppm), bv.shape[0]), (235, 103, 18), 1, cv2.LINE_AA)
+        cv2.line(bv, (int(x * tmpl.ppm), 0), (int(x * tmpl.ppm), bv.shape[0]), (0, 140, 255), 1, cv2.LINE_AA)  # orange (BGR)
     for y in range(0, int(tmpl.H) + 1, 50):
-        cv2.line(bv, (0, int(y * tmpl.ppm)), (bv.shape[1], int(y * tmpl.ppm)), (235, 103, 18), 1, cv2.LINE_AA)
+        cv2.line(bv, (0, int(y * tmpl.ppm)), (bv.shape[1], int(y * tmpl.ppm)), (0, 140, 255), 1, cv2.LINE_AA)  # orange (BGR)
     w = 1400
     ov = cv2.resize(ov, (w, int(ov.shape[0] * w / ov.shape[1])), interpolation=cv2.INTER_AREA)
     bv = cv2.resize(bv, (w, int(bv.shape[0] * w / bv.shape[1])), interpolation=cv2.INTER_AREA)

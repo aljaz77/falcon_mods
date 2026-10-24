@@ -213,10 +213,12 @@ Rectangle {
                             }
                             Repeater {
                                 model: 4
-                                Text {
-                                    x: ((index % 2) + 1) * parent.width / 3 - width / 2
-                                    y: (Math.floor(index / 2) + 1) * parent.height / 3 - height / 2
-                                    text: "+"; color: "#FFFFFF"; font.pixelSize: 22; font.bold: true
+                                // "+" mark centred exactly on the line crossing
+                                Item {
+                                    x: ((index % 2) + 1) * parent.width / 3
+                                    y: (Math.floor(index / 2) + 1) * parent.height / 3
+                                    Rectangle { x: -9; y: -2; width: 18; height: 4; color: "#FFFFFF" }
+                                    Rectangle { x: -2; y: -9; width: 4; height: 18; color: "#FFFFFF" }
                                 }
                             }
                         }

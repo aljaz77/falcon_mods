@@ -116,6 +116,14 @@ def learn_positions(image, p_app, tmpl):
     return learned
 
 
+def _nice_time(stamp):
+    """App SaveTime 'YYYYMMDDHHMM' -> 'YYYY-MM-DD HH:MM'."""
+    s = str(stamp or "")
+    if len(s) == 12 and s.isdigit():
+        return f"{s[:4]}-{s[4:6]}-{s[6:8]} {s[8:10]}:{s[10:12]}"
+    return s or "unknown date"
+
+
 def apply_registration(tmpl, device, image, conf, size, log=print):
     """Return (template, description). Learns from a foreign calibration, else reuses what we learned."""
     nominal = tmpl.positions()
@@ -126,7 +134,7 @@ def apply_registration(tmpl, device, image, conf, size, log=print):
         got = learn_positions(image, p_app, tmpl)
         if got and all(abs(v - nominal[i]) <= MAX_LEARNED_SHIFT_MM for i, v in got.items()):
             learned_pos = got
-            source = f"learned from the app's current calibration (saved {conf.get('SaveTime', '?')})"
+            source = f"this machine's alignment, learned from the calibration of {_nice_time(conf.get('SaveTime'))}"
             save_learned(device, {str(k): v for k, v in got.items()}, source)
             log("registration: " + source + ": " +
                 ", ".join(f"{tmpl.lines[i][0]}{nominal[i]:.1f}->{v:.2f}" for i, v in got.items()))
@@ -136,10 +144,10 @@ def apply_registration(tmpl, device, image, conf, size, log=print):
         st = load_learned(device)
         if st:
             learned_pos = {int(k): v for k, v in st["positions"].items()}
-            source = st.get("source", "learned earlier")
+            source = st.get("source", "this machine's alignment (learned earlier)")
             log("registration: using " + source)
     if learned_pos is None:
-        return tmpl, "template default"
+        return tmpl, "standard Falcon A1 bed grid"
     t = core.Template(tmpl.raw)
     for i, v in learned_pos.items():
         t.lines[i][1] = v

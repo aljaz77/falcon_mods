@@ -101,3 +101,17 @@
 - Not tested: a real engraving of the alignment pattern with *Detect markers* (needs material on the
   bed and someone present), and a visual check of the new page (the PC was locked, and Qt doesn't
   render while locked).
+
+### 1.2.1: real-world test of Detect markers
+- With the user at the machine: the new page looked right (the illustration's "+" marks were off-centre,
+  and the check grid was dark blue because of a BGR mix-up; both fixed).
+  Quick Calibration ran again (0.41 px, 95 %).
+- Stock alignment pattern engraved on 4 mm basswood (two boards side by side). The first Detect markers
+  attempt found 0 of 4. Causes: normalised correlation = 1.0 on the black bed (junk candidates), marker 3
+  half off the board edge, the centre ring + board seam passing as a marker. All fixed; the real photo is
+  now `tests/data/real_align_basswood.jpg`.
+- After *Finish* (live, no restart): camera photo at height 4 mm, cross centres measured in the app's
+  bed view vs. the burned laser coordinates: X within ±0.08 mm; Y +0.23..+0.35 mm by my first sum,
+  but 0.17 mm of that was my own pixel-convention error (the bed view is drawn flipped, which shifts
+  the row maths by one pixel) → about 0.1–0.2 mm true error, around one camera pixel. Camera
+  Fine-Tuning was already 0/0 after the alignment.

@@ -63,7 +63,7 @@ def _cross_score(c, x, y, r):
 def _refine_centre(c, x, y, r):
     """Sub-pixel crosshair centre: fit straight lines to the two cross arms and intersect them."""
     def arm(horizontal):
-        pts = []
+        found = []
         for s in np.linspace(-0.85 * r, 0.85 * r, 40):
             if abs(s) < 0.18 * r:
                 continue
@@ -73,21 +73,35 @@ def _refine_centre(c, x, y, r):
             else:
                 prof = _sample(c, x + offs, np.full_like(offs, y + s))
             k = int(np.argmax(prof))
-            if k in (0, len(prof) - 1) or prof[k] - np.median(prof) < 4:
+            if k in (0, len(prof) - 1):
                 continue
             a, b, cc = prof[k - 1], prof[k], prof[k + 1]
             den = a - 2 * b + cc
             sub = 0.5 * (a - cc) / den if den != 0 else 0.0
             o = offs[k] + sub * (offs[1] - offs[0])
-            pts.append((x + s, y + o) if horizontal else (x + o, y + s))
-        return np.array(pts)
+            found.append(((x + s, y + o) if horizontal else (x + o, y + s), prof[k] - np.median(prof)))
+        if not found:
+            return np.zeros((0, 2))
+        # keep samples that are clearly part of this (possibly faint) engraved line
+        strength = np.array([f[1] for f in found])
+        keep = strength > max(1.0, 0.35 * np.median(strength))
+        return np.array([f[0] for f, k in zip(found, keep) if k])
+
+    def robust_fit(px, py):
+        """Line py = a*px + b, dropping outliers (wood grain, digits) once."""
+        a, b = np.polyfit(px, py, 1)
+        res = np.abs(py - (a * px + b))
+        ok = res < max(1.5, 3 * 1.4826 * np.median(res))
+        if ok.sum() >= 6:
+            a, b = np.polyfit(px[ok], py[ok], 1)
+        return a, b
 
     h, v = arm(True), arm(False)
-    if len(h) < 8 or len(v) < 8:
+    if len(h) < 5 or len(v) < 5:   # partial arms are fine (marker half off the material)
         return None
     # horizontal arm: y = a*x + b ; vertical arm: x = c*y + d
-    a, b = np.polyfit(h[:, 0], h[:, 1], 1)
-    cc, d = np.polyfit(v[:, 1], v[:, 0], 1)
+    a, b = robust_fit(h[:, 0], h[:, 1])
+    cc, d = robust_fit(v[:, 1], v[:, 0])
     yy = (a * d + b) / (1 - a * cc)
     xx = cc * yy + d
     resid = np.r_[h[:, 1] - (a * h[:, 0] + b), v[:, 0] - (cc * v[:, 1] + d)]
@@ -122,10 +136,16 @@ def _matched_candidates(c, rmin, rmax, scale=0.5):
         best[upd] = resp[upd]
         best_r[upd] = r / scale
         r *= 1.08
+    # Normalised correlation degenerates to ~1.0 on featureless areas (e.g. the black bed around the
+    # material): ignore windows without real contrast.
+    k = int(2 * rmin * scale) | 1
+    mean = cv2.blur(small, (k, k))
+    std = np.sqrt(np.maximum(cv2.blur(small * small, (k, k)) - mean * mean, 0))
+    best[std < max(0.5, 0.25 * float(np.median(std[std > 0])) if np.any(std > 0) else 0.5)] = -1.0
     # local maxima
     dil = cv2.dilate(best, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (int(rmin * scale) | 1,) * 2))
     ys, xs = np.where((best == dil) & (best > 0.15))
-    order = np.argsort(-best[ys, xs])[:40]
+    order = np.argsort(-best[ys, xs])[:80]
     return [(xs[i] / scale, ys[i] / scale, float(best_r[ys[i], xs[i]]), float(best[ys[i], xs[i]])) for i in order]
 
 
@@ -149,45 +169,84 @@ def detect(image, expected_radius_px=None):
     for s in scored:
         if all(np.hypot(s[1] - u[1], s[2] - u[2]) > 0.8 * s[3] for u in uniq):
             uniq.append(s)
-    uniq = uniq[:10]
-    if len(uniq) < 4:
+    uniq = uniq[:12]
+    if len(uniq) < 3:
         raise MarkerError(f"found {len(uniq)} of 4 alignment markers - is the engraving visible and "
                           "the material inside the camera view?")
 
-    # pick the 4 that best form a quadrilateral of similar-size markers (one per quadrant)
-    best = None
-    for combo in itertools.combinations(uniq, 4):
+    def shape_ok(combo):
+        """The markers form a 180 x 180 mm square with 20 mm circles: check shape and scale."""
         pts = np.array([[q[1], q[2]] for q in combo])
         rad = np.array([q[3] for q in combo])
         cen = pts.mean(0)
-        quad = {(int(px > cen[0]), int(py > cen[1])) for px, py in pts}
-        if len(quad) != 4:
-            continue
-        # the markers form a 180 x 180 mm square with 20 mm circles: check shape and scale
+        if len({(int(px > cen[0]), int(py > cen[1])) for px, py in pts}) != 4:
+            return False
         o = sorted(range(4), key=lambda i: (pts[i][1] > cen[1], pts[i][0] > cen[0]))
         tl, tr, bl, br = (pts[i] for i in o)
         width = 0.5 * (np.linalg.norm(tr - tl) + np.linalg.norm(br - bl))
         height = 0.5 * (np.linalg.norm(bl - tl) + np.linalg.norm(br - tr))
-        if not 0.75 < width / height < 1.33:
-            continue
-        if not 0.6 < np.mean(rad) / (0.5 * (width + height) / 18.0) < 1.6:
-            continue
-        spread = np.std(rad) / np.mean(rad)
-        score = sum(q[0] for q in combo) * (1 - min(spread, 0.9))
-        if best is None or score > best[0]:
-            best = (score, combo, cen)
-    if best is None:
-        raise MarkerError("could not find the four markers in the four corners of the pattern")
-    _, combo, cen = best
-    order = {(0, 0): 0, (1, 0): 1, (1, 1): 2, (0, 1): 3}  # TL, TR, BR, BL -> markers 1..4
-    out = [None] * 4
-    fit_rms = []
-    for q in combo:
-        _, x, y, r = q
-        ref = _refine_centre(c, x, y, r)
-        if ref is None:
-            raise MarkerError("a marker's cross could not be measured precisely")
-        out[order[(int(x > cen[0]), int(y > cen[1]))]] = [ref[0], ref[1]]
-        fit_rms.append(ref[2])
-    return {"points": out, "radius_px": float(np.mean([q[3] for q in combo])),
-            "line_rms_px": float(np.mean(fit_rms))}
+        # opposite sides nearly equal and parallel (a square seen with mild perspective) ...
+        parallel = (np.linalg.norm((tr - tl) - (br - bl)) < 0.15 * width
+                    and np.linalg.norm((bl - tl) - (br - tr)) < 0.15 * height)
+        # ... and roughly axis-aligned (the pattern is engraved along X/Y; rules out "diamonds")
+        top, left = tr - tl, bl - tl
+        parallel = parallel and abs(top[1]) < 0.2 * abs(top[0]) and abs(left[0]) < 0.2 * abs(left[1])
+        return (parallel and 0.75 < width / height < 1.33
+                and 0.6 < np.mean(rad) / (0.5 * (width + height) / 18.0) < 1.6
+                and np.std(rad) / np.mean(rad) < 0.3)
+
+    def finalize(combo):
+        """Measure each cross precisely; None if any of them doesn't look like a crosshair."""
+        cen = np.mean([[q[1], q[2]] for q in combo], axis=0)
+        order = {(0, 0): 0, (1, 0): 1, (1, 1): 2, (0, 1): 3}  # TL, TR, BR, BL -> markers 1..4
+        out, fit_rms = [None] * 4, []
+        for q in combo:
+            _, x, y, r = q
+            ref = _refine_centre(c, x, y, r)
+            if ref is None or ref[2] > 3.0 or np.hypot(ref[0] - x, ref[1] - y) > 0.5 * r:
+                return None
+            out[order[(int(x > cen[0]), int(y > cen[1]))]] = [ref[0], ref[1]]
+            fit_rms.append(ref[2])
+        if any(p is None for p in out):
+            return None
+        return {"points": out, "radius_px": float(np.mean([q[3] for q in combo])),
+                "line_rms_px": float(np.mean(fit_rms))}
+
+    # 1) four detected markers, best-scoring plausible square first
+    combos = [(sum(q[0] for q in cb), cb) for cb in itertools.combinations(uniq, 4) if shape_ok(cb)]
+    for _, combo in sorted(combos, key=lambda t: -t[0])[:20]:
+        res = finalize(combo)
+        if res:
+            return res
+
+    # 2) three markers + the fourth predicted from the square (e.g. half off the material edge)
+    tries = []
+    for tri in itertools.combinations(uniq, 3):
+        P = [np.array([q[1], q[2]]) for q in tri]
+        for k in range(3):
+            A, B, C = P[k], P[(k + 1) % 3], P[(k + 2) % 3]
+            u, v = B - A, C - A
+            lu, lv = np.linalg.norm(u), np.linalg.norm(v)
+            if not (0.75 < lu / lv < 1.33) or abs(np.dot(u, v)) / (lu * lv) > 0.15:
+                continue  # A must be a right-angle corner of the square
+            r0 = float(np.mean([q[3] for q in tri]))
+            Dp = B + C - A
+            best4 = None
+            # perspective makes the pattern a trapezoid, so the parallelogram guess can be ~1.5 r off;
+            # the matched-filter radius runs a little large, so also try smaller circles
+            for r in (0.8 * r0, 0.9 * r0, r0):
+                for dy in np.arange(-1.8 * r0, 1.8 * r0 + 1, 3.0):
+                    for dx in np.arange(-1.8 * r0, 1.8 * r0 + 1, 3.0):
+                        x, y = Dp[0] + dx, Dp[1] + dy
+                        sc = min(_ring_score(c, x, y, r), _cross_score(c, x, y, r))
+                        if best4 is None or sc > best4[0]:
+                            best4 = (sc, x, y, r)
+            if best4 and best4[0] > 1.0:
+                tries.append((sum(q[0] for q in tri), tri + (best4,)))
+    for _, combo in sorted(tries, key=lambda t: -t[0])[:12]:
+        if shape_ok(combo):
+            res = finalize(combo)
+            if res:
+                return res
+    raise MarkerError("could not measure all four markers - make sure the whole pattern is on the "
+                      "material and clearly burned, then capture again")

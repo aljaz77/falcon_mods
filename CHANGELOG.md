@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.2.1 (2026-10-24)
+- Detect markers works on real engravings. Tested on a Falcon A1 with 4 mm basswood: the camera
+  view then matches the laser within ~0.2 mm at all four markers. Fixes:
+  - featureless areas (black bed around the material) no longer flood the candidate list;
+  - a marker half off the material edge is found by predicting it from the other three;
+  - the centre ring (plus a seam between two boards) is no longer mistaken for a marker
+    (the pattern must be an axis-aligned square);
+  - faint, partial cross lines are measured with an adaptive threshold and a robust line fit.
+- Quick Calibration page: orange 50 mm check grid, readable "Laser reference" text, "+" marks
+  centred in the illustration.
+
 ## 1.2.0 (2026-10-24)
 - Quick Calibration now runs in a page **inside Falcon Design Space** (stock look: steps, result
   images, stats). The helper works in the background, and *Apply* restarts the app automatically.

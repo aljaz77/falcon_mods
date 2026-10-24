@@ -105,3 +105,14 @@ def test_markers_found_next_to_bed_grid():
     res = markers.detect(img.astype(np.uint8))
     truth = core.project(p, np.array(markers.STOCK_MARKERS_MM))
     assert np.linalg.norm(np.array(res["points"]) - truth, axis=1).max() < 1.0
+
+
+def test_real_engraving_on_two_boards():
+    """Real photo (Falcon A1, 4 mm basswood, two boards): faint markers 3/4 half off the material
+    edge, the centre ring crossed by the seam between the boards. Verified by eye and by the
+    resulting alignment (camera vs laser within ~0.2 mm)."""
+    import os
+    img = cv2.imread(os.path.join(os.path.dirname(__file__), "data", "real_align_basswood.jpg"))
+    res = markers.detect(img)
+    want = np.array([[604.1, 610.0], [1628.6, 606.3], [1600.5, 1580.4], [651.1, 1586.7]])
+    assert np.linalg.norm(np.array(res["points"]) - want, axis=1).max() < 2.0
